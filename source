@@ -1,216 +1,318 @@
-local NotificationLibrary = {}
-local TweenService = game:GetService("TweenService")
-local Players = game:GetService("Players")
+local BeautifulNotifications = {}
+BeautifulNotifications.__index = BeautifulNotifications
 
-local player = Players.LocalPlayer
-local playerGui = player:WaitForChild("PlayerGui")
-
-local STYLES = {
-    Success = {
-        MainColor = Color3.fromRGB(46, 213, 115),
-        Icon = "rbxassetid://11157772247",
-        TextColor = Color3.fromRGB(255, 255, 255)
+local DEFAULT_SETTINGS = {
+    Position = UDim2.new(0.5, 0, 0.8, 0),
+    AnchorPoint = Vector2.new(0.5, 0.5),
+    Duration = 5,
+    AnimationSpeed = 0.25,
+    MaxNotifications = 5,
+    Spacing = 10,
+    Colors = {
+        Success = Color3.fromRGB(46, 204, 113),
+        Error = Color3.fromRGB(231, 76, 60),
+        Warning = Color3.fromRGB(241, 196, 15),
+        Info = Color3.fromRGB(52, 152, 219),
+        Custom = Color3.fromRGB(155, 89, 182)
     },
-    Error = {
-        MainColor = Color3.fromRGB(255, 71, 87),
-        Icon = "rbxassetid://9734956085",
-        TextColor = Color3.fromRGB(255, 255, 255)
+    Icons = {
+        Success = "rbxassetid://11157772247",
+        Error = "rbxassetid://9734956085",
+        Warning = "rbxassetid://85147473315465",
+        Info = "rbxassetid://9405926389"
     },
-    Warning = {
-        MainColor = Color3.fromRGB(255, 165, 0),
-        Icon = "rbxassetid://85147473315465",
-        TextColor = Color3.fromRGB(50, 40, 10)
-    },
-    Info = {
-        MainColor = Color3.fromRGB(0, 168, 255),
-        Icon = "rbxassetid://9405926389",
-        TextColor = Color3.fromRGB(255, 255, 255)
+    Sounds = {
+        Success = "rbxassetid://6537568442",
+        Error = "rbxassetid://6537568442",
+        Warning = "rbxassetid://6537568442",
+        Info = "rbxassetid://6537568442"
     }
 }
 
--- Глобальные переменные для управления уведомлениями
-local activeNotifications = {}
-local notificationOffset = 0
-local baseYPosition = 0.1
-local spacing = 10
-
-local function CreateNotificationScreen()
+function BeautifulNotifications:CreateBaseElements()
     local screenGui = Instance.new("ScreenGui")
-    screenGui.Name = "PremiumNotifications"
-    screenGui.Parent = playerGui
-    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.Name = "BeautifulNotifications"
     screenGui.ResetOnSpawn = false
-    return screenGui
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.Parent = game:GetService("CoreGui") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+
+    local notificationsFolder = Instance.new("Folder")
+    notificationsFolder.Name = "Notifications"
+    notificationsFolder.Parent = screenGui
+
+    self.screenGui = screenGui
+    self.notificationsFolder = notificationsFolder
 end
 
-local NotificationScreen = CreateNotificationScreen()
+function BeautifulNotifications.init(settings)
+    local self = setmetatable({}, BeautifulNotifications)
+    
+    self.settings = table.clone(DEFAULT_SETTINGS)
+    if settings then
+        for k, v in pairs(settings) do
+            self.settings[k] = v
+        end
+    end
+    
+    self.notifications = {}
+    self:CreateBaseElements()
+    
+    return self
+end
 
-function NotificationLibrary.Notify(title, message, style, duration)
-    -- Проверка входных параметров
-    if not title or not message then
-        warn("NotificationLibrary: title and message are required")
-        return
+local function tween(obj, props, duration, style, direction)
+    local tweenInfo = TweenInfo.new(
+        duration or 0.25,
+        style or Enum.EasingStyle.Quad,
+        direction or Enum.EasingDirection.Out
+    )
+    game:GetService("TweenService"):Create(obj, tweenInfo, props):Play()
+end
+
+local function setupParallaxEffect(button)
+    local originalSize = button.Size
+    local originalPosition = button.Position
+    
+    button.MouseEnter:Connect(function()
+        tween(button, {Size = originalSize + UDim2.new(0, 4, 0, 4)}, 0.1)
+    end)
+    
+    button.MouseLeave:Connect(function()
+        tween(button, {Size = originalSize}, 0.1)
+    end)
+    
+    button.MouseButton1Down:Connect(function()
+        tween(button, {Size = originalSize - UDim2.new(0, 2, 0, 2)}, 0.05)
+    end)
+    
+    button.MouseButton1Up:Connect(function()
+        tween(button, {Size = originalSize + UDim2.new(0, 4, 0, 4)}, 0.05)
+    end)
+end
+
+function BeautifulNotifications:CreateNotification(title, message, notificationType, customSettings)
+    local settings = table.clone(self.settings)
+    if customSettings then
+        for k, v in pairs(customSettings) do
+            settings[k] = v
+        end
     end
     
-    style = style or "Info"
-    duration = duration or 5
-    
-    if not STYLES[style] then
-        warn("NotificationLibrary: invalid style '" .. style .. "'")
-        style = "Info"
+    if #self.notifications >= settings.MaxNotifications then
+        local oldestNotification = table.remove(self.notifications, 1)
+        self:RemoveNotification(oldestNotification, 0.1)
     end
     
-    local styleConfig = STYLES[style]
+    local notificationFrame = Instance.new("Frame")
+    notificationFrame.Name = "Notification"
+    notificationFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    notificationFrame.BackgroundTransparency = 1
+    notificationFrame.Size = UDim2.new(0.3, 0, 0, 0)
+    notificationFrame.Position = settings.Position
+    notificationFrame.AnchorPoint = settings.AnchorPoint
+    notificationFrame.ClipsDescendants = true
+    notificationFrame.Parent = self.notificationsFolder
     
-    -- Создаем контейнер уведомления
-    local notification = Instance.new("Frame")
-    notification.Name = "Notification_" .. style
-    notification.Parent = NotificationScreen
-    notification.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-    notification.Position = UDim2.new(1, 10, baseYPosition + (notificationOffset / playerGui.AbsoluteSize.Y), 0)
-    notification.Size = UDim2.new(0, 300, 0, 0)
-    notification.AnchorPoint = Vector2.new(1, 0)
-    notification.ClipsDescendants = true
-    notification.ZIndex = 10
+    local background = Instance.new("Frame")
+    background.Name = "Background"
+    background.Size = UDim2.new(1, 0, 1, 0)
+    background.Position = UDim2.new(0, 0, 0, 0)
+    background.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    background.BackgroundTransparency = 0.1
+    background.Parent = notificationFrame
     
-    -- Добавляем скругление углов
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 12)
-    corner.Parent = notification
+    local glassEffect = Instance.new("Frame")
+    glassEffect.Name = "GlassEffect"
+    glassEffect.Size = UDim2.new(1, 0, 1, 0)
+    glassEffect.BackgroundTransparency = 0.95
+    glassEffect.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    glassEffect.BorderSizePixel = 0
+    glassEffect.Parent = background
     
-    -- Заголовок уведомления
-    local header = Instance.new("Frame")
-    header.Name = "Header"
-    header.Parent = notification
-    header.BackgroundColor3 = styleConfig.MainColor
-    header.Size = UDim2.new(1, 0, 0, 40)
-    header.ZIndex = 11
+    local shadow = Instance.new("ImageLabel")
+    shadow.Name = "Shadow"
+    shadow.Size = UDim2.new(1, 10, 1, 10)
+    shadow.Position = UDim2.new(0, -5, 0, -5)
+    shadow.BackgroundTransparency = 1
+    shadow.Image = "rbxassetid://5554236805"
+    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    shadow.ImageTransparency = 0.8
+    shadow.ScaleType = Enum.ScaleType.Slice
+    shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+    shadow.Parent = notificationFrame
+    
+    local accentBar = Instance.new("Frame")
+    accentBar.Name = "AccentBar"
+    accentBar.Size = UDim2.new(0, 5, 1, -20)
+    accentBar.Position = UDim2.new(0, 5, 0, 10)
+    accentBar.BackgroundColor3 = settings.Colors[notificationType] or settings.Colors.Custom
+    accentBar.BorderSizePixel = 0
+    accentBar.Parent = background
     
     local icon = Instance.new("ImageLabel")
     icon.Name = "Icon"
-    icon.Parent = header
-    icon.BackgroundTransparency = 1
-    icon.Position = UDim2.new(0, 10, 0.5, -12)
     icon.Size = UDim2.new(0, 24, 0, 24)
-    icon.Image = styleConfig.Icon
-    icon.ImageColor3 = Color3.fromRGB(255, 255, 255)
-    icon.ZIndex = 12
+    icon.Position = UDim2.new(0, 20, 0, 15)
+    icon.BackgroundTransparency = 1
+    icon.Image = settings.Icons[notificationType] or settings.Icons.Info
+    icon.ImageColor3 = settings.Colors[notificationType] or settings.Colors.Custom
+    icon.Parent = background
     
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Name = "Title"
-    titleLabel.Parent = header
+    titleLabel.Size = UDim2.new(0.7, -50, 0, 20)
+    titleLabel.Position = UDim2.new(0, 50, 0, 15)
     titleLabel.BackgroundTransparency = 1
-    titleLabel.Position = UDim2.new(0, 45, 0, 0)
-    titleLabel.Size = UDim2.new(1, -50, 1, 0)
     titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.Text = title
-    titleLabel.TextColor3 = styleConfig.TextColor
+    titleLabel.Text = title or "Notification"
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
     titleLabel.TextSize = 16
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.ZIndex = 12
-    
-    local body = Instance.new("Frame")
-    body.Name = "Body"
-    body.Parent = notification
-    body.BackgroundTransparency = 1
-    body.Position = UDim2.new(0, 0, 0, 45)
-    body.Size = UDim2.new(1, 0, 0, 0)
-    body.ZIndex = 11
+    titleLabel.TextYAlignment = Enum.TextYAlignment.Center
+    titleLabel.Parent = background
     
     local messageLabel = Instance.new("TextLabel")
     messageLabel.Name = "Message"
-    messageLabel.Parent = body
+    messageLabel.Size = UDim2.new(1, -30, 1, -50)
+    messageLabel.Position = UDim2.new(0, 15, 0, 40)
     messageLabel.BackgroundTransparency = 1
-    messageLabel.Position = UDim2.new(0, 15, 0, 10)
-    messageLabel.Size = UDim2.new(1, -30, 0, 0)
     messageLabel.Font = Enum.Font.Gotham
-    messageLabel.Text = message
-    messageLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    messageLabel.Text = message or ""
+    messageLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
     messageLabel.TextSize = 14
-    messageLabel.TextWrapped = true
     messageLabel.TextXAlignment = Enum.TextXAlignment.Left
     messageLabel.TextYAlignment = Enum.TextYAlignment.Top
-    messageLabel.ZIndex = 12
+    messageLabel.TextWrapped = true
+    messageLabel.Parent = background
     
-    local textHeight = math.ceil(messageLabel.TextBounds.Y / 14) * 14 + 20
-    messageLabel.Size = UDim2.new(1, -30, 0, textHeight)
+    local closeButton = Instance.new("ImageButton")
+    closeButton.Name = "CloseButton"
+    closeButton.Size = UDim2.new(0, 20, 0, 20)
+    closeButton.Position = UDim2.new(1, -25, 0, 15)
+    closeButton.BackgroundTransparency = 1
+    closeButton.Image = "rbxassetid://6031090991"
+    closeButton.ImageColor3 = Color3.fromRGB(150, 150, 150)
+    closeButton.Parent = background
     
-    local totalHeight = 45 + textHeight + 15
-    body.Size = UDim2.new(1, 0, 0, textHeight + 5)
+    setupParallaxEffect(closeButton)
     
-    local function Close()
-        -- Удаляем из списка активных
-        for i, notif in ipairs(activeNotifications) do
-            if notif.Frame == notification then
-                table.remove(activeNotifications, i)
-                break
-            end
+    local progressBar = Instance.new("Frame")
+    progressBar.Name = "ProgressBar"
+    progressBar.Size = UDim2.new(1, -10, 0, 3)
+    progressBar.Position = UDim2.new(0, 5, 1, -8)
+    progressBar.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    progressBar.BorderSizePixel = 0
+    progressBar.Parent = background
+    
+    local progressFill = Instance.new("Frame")
+    progressFill.Name = "ProgressFill"
+    progressFill.Size = UDim2.new(1, 0, 1, 0)
+    progressFill.BackgroundColor3 = settings.Colors[notificationType] or settings.Colors.Custom
+    progressFill.BorderSizePixel = 0
+    progressFill.Parent = progressBar
+    
+    notificationFrame.Size = UDim2.new(0.3, 0, 0, 0)
+    notificationFrame.BackgroundTransparency = 1
+    
+    local textHeight = math.min(100, messageLabel.TextBounds.Y + 60)
+    local targetSize = UDim2.new(0.3, 0, 0, textHeight)
+    
+    tween(notificationFrame, {Size = targetSize, BackgroundTransparency = 0}, settings.AnimationSpeed, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+    
+    if settings.Sounds[notificationType] then
+        local sound = Instance.new("Sound")
+        sound.SoundId = settings.Sounds[notificationType]
+        sound.Volume = 0.5
+        sound.Parent = notificationFrame
+        sound:Play()
+        game:GetService("Debris"):AddItem(sound, 3)
+    end
+    
+    spawn(function()
+        progressFill.Size = UDim2.new(1, 0, 1, 0)
+        tween(progressFill, {Size = UDim2.new(0, 0, 1, 0)}, settings.Duration, Enum.EasingStyle.Linear)
+    end)
+    
+    local removeConnection
+    removeConnection = game:GetService("RunService").Heartbeat:Connect(function(dt)
+        settings.Duration = settings.Duration - dt
+        if settings.Duration <= 0 then
+            removeConnection:Disconnect()
+            self:RemoveNotification(notificationFrame, settings.AnimationSpeed)
         end
-        
-        local closeTween = TweenService:Create(notification, TweenInfo.new(0.3), {
-            Position = UDim2.new(1.5, 0, notification.Position.Y.Scale, 0)
-        })
-        
-        closeTween:Play()
-        closeTween.Completed:Connect(function()
+    end)
+    
+    closeButton.MouseButton1Click:Connect(function()
+        removeConnection:Disconnect()
+        self:RemoveNotification(notificationFrame, settings.AnimationSpeed)
+    end)
+    
+    table.insert(self.notifications, notificationFrame)
+    
+    self:UpdateNotificationsPositions()
+    
+    return notificationFrame
+end
+
+function BeautifulNotifications:RemoveNotification(notification, duration)
+    for i, notif in ipairs(self.notifications) do
+        if notif == notification then
+            table.remove(self.notifications, i)
+            break
+        end
+    end
+    
+    tween(notification, {Size = UDim2.new(notification.Size.X.Scale, 0, 0, 0), BackgroundTransparency = 1}, duration or 0.25)
+    
+    spawn(function()
+        wait(duration or 0.25)
+        if notification and notification.Parent then
             notification:Destroy()
-            UpdateNotificationsPositions()
-        end)
-    end
-    
-    table.insert(activeNotifications, {
-        Frame = notification,
-        Close = Close
-    })
-    
-    notification.Size = UDim2.new(0, 300, 0, totalHeight)
-    
-    local openTween = TweenService:Create(notification, TweenInfo.new(0.5, Enum.EasingStyle.Back), {
-        Position = UDim2.new(0.98, 0, notification.Position.Y.Scale, 0)
-    })
-    
-    openTween:Play()
-    
-    if duration > 0 then
-        task.delay(duration, Close)
-    end
-    
-    return {
-        Close = Close,
-        Frame = notification
-    }
-end
-
-local function UpdateNotificationsPositions()
-    local totalHeight = 0
-    for i, notif in ipairs(activeNotifications) do
-        if notif and notif.Frame and notif.Frame.Parent then
-            local targetY = baseYPosition + (totalHeight / playerGui.AbsoluteSize.Y)
-            TweenService:Create(notif.Frame, TweenInfo.new(0.3), {
-                Position = UDim2.new(0.98, 0, targetY, 0)
-            }):Play()
-            
-            totalHeight = totalHeight + notif.Frame.AbsoluteSize.Y + spacing
-        else
-            table.remove(activeNotifications, i)
         end
+        self:UpdateNotificationsPositions()
+    end)
+end
+
+function BeautifulNotifications:UpdateNotificationsPositions()
+    local settings = self.settings
+    local startPosition = settings.Position.Y.Scale
+    
+    for i, notification in ipairs(self.notifications) do
+        local targetPosition = UDim2.new(
+            settings.Position.X.Scale,
+            settings.Position.X.Offset,
+            startPosition - (i * (notification.Size.Y.Scale + settings.Spacing)),
+            0
+        )
+        
+        tween(notification, {Position = targetPosition}, settings.AnimationSpeed)
     end
 end
 
-function NotificationLibrary.Success(title, message, duration)
-    return NotificationLibrary.Notify(title, message, "Success", duration)
+function BeautifulNotifications:Success(title, message, customSettings)
+    return self:CreateNotification(title, message, "Success", customSettings)
 end
 
-function NotificationLibrary.Error(title, message, duration)
-    return NotificationLibrary.Notify(title, message, "Error", duration)
+function BeautifulNotifications:Error(title, message, customSettings)
+    return self:CreateNotification(title, message, "Error", customSettings)
 end
 
-function NotificationLibrary.Warning(title, message, duration)
-    return NotificationLibrary.Notify(title, message, "Warning", duration)
+function BeautifulNotifications:Warning(title, message, customSettings)
+    return self:CreateNotification(title, message, "Warning", customSettings)
 end
 
-function NotificationLibrary.Info(title, message, duration)
-    return NotificationLibrary.Notify(title, message, "Info", duration)
+function BeautifulNotifications:Info(title, message, customSettings)
+    return self:CreateNotification(title, message, "Info", customSettings)
 end
 
-return NotificationLibrary
+function BeautifulNotifications:Custom(title, message, color, icon, customSettings)
+    local settings = customSettings or {}
+    settings.Colors = settings.Colors or {}
+    settings.Colors.Custom = color or settings.Colors.Custom
+    settings.Icons = settings.Icons or {}
+    settings.Icons.Custom = icon or settings.Icons.Info
+    
+    return self:CreateNotification(title, message, "Custom", settings)
+end
+
+return BeautifulNotifications
