@@ -30,11 +30,20 @@ local DEFAULT_SETTINGS = {
 }
 
 function BeautifulNotifications:CreateBaseElements()
+    local player = game:GetService("Players").LocalPlayer
+    local playerGui = player:WaitForChild("PlayerGui")
+    
+    local existingGui = playerGui:FindFirstChild("BeautifulNotifications")
+    if existingGui then
+        existingGui:Destroy()
+    end
+    
     local screenGui = Instance.new("ScreenGui")
     screenGui.Name = "BeautifulNotifications"
     screenGui.ResetOnSpawn = false
-    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-    screenGui.Parent = game:GetService("CoreGui") or game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Global
+    screenGui.DisplayOrder = 10
+    screenGui.Parent = playerGui
 
     local notificationsFolder = Instance.new("Folder")
     notificationsFolder.Name = "Notifications"
@@ -105,7 +114,6 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
     
     local notificationFrame = Instance.new("Frame")
     notificationFrame.Name = "Notification"
-    notificationFrame.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
     notificationFrame.BackgroundTransparency = 1
     notificationFrame.Size = UDim2.new(0.3, 0, 0, 0)
     notificationFrame.Position = settings.Position
@@ -195,7 +203,7 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
     closeButton.Parent = background
     
     setupParallaxEffect(closeButton)
-    
+
     local progressBar = Instance.new("Frame")
     progressBar.Name = "ProgressBar"
     progressBar.Size = UDim2.new(1, -10, 0, 3)
@@ -212,7 +220,6 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
     progressFill.Parent = progressBar
     
     notificationFrame.Size = UDim2.new(0.3, 0, 0, 0)
-    notificationFrame.BackgroundTransparency = 1
     
     local textHeight = math.min(100, messageLabel.TextBounds.Y + 60)
     local targetSize = UDim2.new(0.3, 0, 0, textHeight)
@@ -281,7 +288,7 @@ function BeautifulNotifications:UpdateNotificationsPositions()
         local targetPosition = UDim2.new(
             settings.Position.X.Scale,
             settings.Position.X.Offset,
-            startPosition - (i * (notification.Size.Y.Scale + settings.Spacing)),
+            startPosition - (i * (notification.AbsoluteSize.Y / notification.Parent.AbsoluteSize.Y + settings.Spacing)),
             0
         )
         
