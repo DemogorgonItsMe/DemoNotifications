@@ -1,63 +1,192 @@
 local NotificationLibrary = {}
 local TweenService = game:GetService("TweenService")
-local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
 
 local STYLES = {
     Success = {
-        MainColor = Color3.fromRGB(40, 200, 110),
+        MainColor = Color3.fromRGB(46, 213, 115),
         Icon = "rbxassetid://11157772247",
-        AccentColor = Color3.fromRGB(30, 180, 90),
-        TextColor = Color3.fromRGB(240, 255, 240),
-        GlowColor = Color3.fromRGB(40, 200, 110)
+        TextColor = Color3.fromRGB(255, 255, 255)
     },
     Error = {
-        MainColor = Color3.fromRGB(240, 80, 80),
+        MainColor = Color3.fromRGB(255, 71, 87),
         Icon = "rbxassetid://9734956085",
-        AccentColor = Color3.fromRGB(220, 60, 60),
-        TextColor = Color3.fromRGB(255, 240, 240),
-        GlowColor = Color3.fromRGB(240, 80, 80)
+        TextColor = Color3.fromRGB(255, 255, 255)
     },
     Warning = {
-        MainColor = Color3.fromRGB(255, 180, 40),
+        MainColor = Color3.fromRGB(255, 165, 0),
         Icon = "rbxassetid://85147473315465",
-        AccentColor = Color3.fromRGB(235, 160, 20),
-        TextColor = Color3.fromRGB(50, 40, 10),
-        GlowColor = Color3.fromRGB(255, 180, 40)
+        TextColor = Color3.fromRGB(50, 40, 10)
     },
     Info = {
-        MainColor = Color3.fromRGB(60, 160, 255),
+        MainColor = Color3.fromRGB(0, 168, 255),
         Icon = "rbxassetid://9405926389",
-        AccentColor = Color3.fromRGB(40, 140, 235),
-        TextColor = Color3.fromRGB(240, 248, 255),
-        GlowColor = Color3.fromRGB(60, 160, 255)
-    },
-    Premium = {
-        MainColor = Color3.fromRGB(180, 60, 220),
-        Icon = "rbxassetid://993482650",
-        AccentColor = Color3.fromRGB(160, 40, 200),
-        TextColor = Color3.fromRGB(255, 240, 255),
-        GlowColor = Color3.fromRGB(180, 60, 220)
+        TextColor = Color3.fromRGB(255, 255, 255)
     }
 }
 
+-- Глобальные переменные для управления уведомлениями
 local activeNotifications = {}
 local notificationOffset = 0
 local baseYPosition = 0.1
 local spacing = 10
 
-local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
-local NotificationScreen = Instance.new("ScreenGui")
-NotificationScreen.Name = "PremiumNotificationsV2"
-NotificationScreen.Parent = PlayerGui
-NotificationScreen.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-NotificationScreen.ResetOnSpawn = false
+local function CreateNotificationScreen()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Name = "PremiumNotifications"
+    screenGui.Parent = playerGui
+    screenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+    screenGui.ResetOnSpawn = false
+    return screenGui
+end
+
+local NotificationScreen = CreateNotificationScreen()
+
+function NotificationLibrary.Notify(title, message, style, duration)
+    -- Проверка входных параметров
+    if not title or not message then
+        warn("NotificationLibrary: title and message are required")
+        return
+    end
+    
+    style = style or "Info"
+    duration = duration or 5
+    
+    if not STYLES[style] then
+        warn("NotificationLibrary: invalid style '" .. style .. "'")
+        style = "Info"
+    end
+    
+    local styleConfig = STYLES[style]
+    
+    -- Создаем контейнер уведомления
+    local notification = Instance.new("Frame")
+    notification.Name = "Notification_" .. style
+    notification.Parent = NotificationScreen
+    notification.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    notification.Position = UDim2.new(1, 10, baseYPosition + (notificationOffset / playerGui.AbsoluteSize.Y), 0)
+    notification.Size = UDim2.new(0, 300, 0, 0)
+    notification.AnchorPoint = Vector2.new(1, 0)
+    notification.ClipsDescendants = true
+    notification.ZIndex = 10
+    
+    -- Добавляем скругление углов
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 12)
+    corner.Parent = notification
+    
+    -- Заголовок уведомления
+    local header = Instance.new("Frame")
+    header.Name = "Header"
+    header.Parent = notification
+    header.BackgroundColor3 = styleConfig.MainColor
+    header.Size = UDim2.new(1, 0, 0, 40)
+    header.ZIndex = 11
+    
+    local icon = Instance.new("ImageLabel")
+    icon.Name = "Icon"
+    icon.Parent = header
+    icon.BackgroundTransparency = 1
+    icon.Position = UDim2.new(0, 10, 0.5, -12)
+    icon.Size = UDim2.new(0, 24, 0, 24)
+    icon.Image = styleConfig.Icon
+    icon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+    icon.ZIndex = 12
+    
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "Title"
+    titleLabel.Parent = header
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Position = UDim2.new(0, 45, 0, 0)
+    titleLabel.Size = UDim2.new(1, -50, 1, 0)
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.Text = title
+    titleLabel.TextColor3 = styleConfig.TextColor
+    titleLabel.TextSize = 16
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    titleLabel.ZIndex = 12
+    
+    local body = Instance.new("Frame")
+    body.Name = "Body"
+    body.Parent = notification
+    body.BackgroundTransparency = 1
+    body.Position = UDim2.new(0, 0, 0, 45)
+    body.Size = UDim2.new(1, 0, 0, 0)
+    body.ZIndex = 11
+    
+    local messageLabel = Instance.new("TextLabel")
+    messageLabel.Name = "Message"
+    messageLabel.Parent = body
+    messageLabel.BackgroundTransparency = 1
+    messageLabel.Position = UDim2.new(0, 15, 0, 10)
+    messageLabel.Size = UDim2.new(1, -30, 0, 0)
+    messageLabel.Font = Enum.Font.Gotham
+    messageLabel.Text = message
+    messageLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    messageLabel.TextSize = 14
+    messageLabel.TextWrapped = true
+    messageLabel.TextXAlignment = Enum.TextXAlignment.Left
+    messageLabel.TextYAlignment = Enum.TextYAlignment.Top
+    messageLabel.ZIndex = 12
+    
+    local textHeight = math.ceil(messageLabel.TextBounds.Y / 14) * 14 + 20
+    messageLabel.Size = UDim2.new(1, -30, 0, textHeight)
+    
+    local totalHeight = 45 + textHeight + 15
+    body.Size = UDim2.new(1, 0, 0, textHeight + 5)
+    
+    local function Close()
+        -- Удаляем из списка активных
+        for i, notif in ipairs(activeNotifications) do
+            if notif.Frame == notification then
+                table.remove(activeNotifications, i)
+                break
+            end
+        end
+        
+        local closeTween = TweenService:Create(notification, TweenInfo.new(0.3), {
+            Position = UDim2.new(1.5, 0, notification.Position.Y.Scale, 0)
+        })
+        
+        closeTween:Play()
+        closeTween.Completed:Connect(function()
+            notification:Destroy()
+            UpdateNotificationsPositions()
+        end)
+    end
+    
+    table.insert(activeNotifications, {
+        Frame = notification,
+        Close = Close
+    })
+    
+    notification.Size = UDim2.new(0, 300, 0, totalHeight)
+    
+    local openTween = TweenService:Create(notification, TweenInfo.new(0.5, Enum.EasingStyle.Back), {
+        Position = UDim2.new(0.98, 0, notification.Position.Y.Scale, 0)
+    })
+    
+    openTween:Play()
+    
+    if duration > 0 then
+        task.delay(duration, Close)
+    end
+    
+    return {
+        Close = Close,
+        Frame = notification
+    }
+end
 
 local function UpdateNotificationsPositions()
     local totalHeight = 0
     for i, notif in ipairs(activeNotifications) do
         if notif and notif.Frame and notif.Frame.Parent then
-            local targetY = baseYPosition + (totalHeight / PlayerGui.AbsoluteSize.Y)
-            TweenService:Create(notif.Frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+            local targetY = baseYPosition + (totalHeight / playerGui.AbsoluteSize.Y)
+            TweenService:Create(notif.Frame, TweenInfo.new(0.3), {
                 Position = UDim2.new(0.98, 0, targetY, 0)
             }):Play()
             
@@ -68,214 +197,20 @@ local function UpdateNotificationsPositions()
     end
 end
 
-function NotificationLibrary.Notify(title, message, style, duration, options)
-    style = style or "Info"
-    duration = duration or 5
-    options = options or {}
-    
-    local styleConfig = STYLES[style] or STYLES.Info
-    
-    local notification = Instance.new("Frame")
-    notification.Name = "Notification_"..style
-    notification.Parent = NotificationScreen
-    notification.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    notification.Position = UDim2.new(1.2, 0, baseYPosition + (notificationOffset / PlayerGui.AbsoluteSize.Y), 0)
-    notification.Size = UDim2.new(0, 380, 0, 0)
-    notification.AnchorPoint = Vector2.new(1, 0)
-    notification.ClipsDescendants = true
-    notification.ZIndex = 10
-    
-    local corner = Instance.new("UICorner")
-    corner.CornerRadius = UDim.new(0, 14)
-    corner.Parent = notification
-    
-    local shadow = Instance.new("ImageLabel")
-    shadow.Name = "Shadow"
-    shadow.Parent = notification
-    shadow.BackgroundTransparency = 1
-    shadow.Size = UDim2.new(1, 20, 1, 20)
-    shadow.Position = UDim2.new(0.5, -10, 0.5, -10)
-    shadow.AnchorPoint = Vector2.new(0.5, 0.5)
-    shadow.Image = "rbxassetid://1316045217"
-    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
-    shadow.ImageTransparency = 0.8
-    shadow.ScaleType = Enum.ScaleType.Slice
-    shadow.SliceCenter = Rect.new(10, 10, 118, 118)
-    shadow.ZIndex = -1
-    
-    local accentBar = Instance.new("Frame")
-    accentBar.Name = "AccentBar"
-    accentBar.Parent = notification
-    accentBar.BackgroundColor3 = styleConfig.AccentColor
-    accentBar.Size = UDim2.new(0, 6, 1, 0)
-    accentBar.Position = UDim2.new(0, 0, 0, 0)
-    accentBar.ZIndex = 11
-    
-    local accentCorner = Instance.new("UICorner")
-    accentCorner.CornerRadius = UDim.new(0, 3)
-    accentCorner.Parent = accentBar
-    
-    local header = Instance.new("Frame")
-    header.Name = "Header"
-    header.Parent = notification
-    header.BackgroundTransparency = 1
-    header.Size = UDim2.new(1, -20, 0, 50)
-    header.Position = UDim2.new(0, 15, 0, 10)
-    header.ZIndex = 11
-    
-    local icon = Instance.new("ImageLabel")
-    icon.Name = "Icon"
-    icon.Parent = header
-    icon.BackgroundTransparency = 1
-    icon.Position = UDim2.new(0, 0, 0.5, -15)
-    icon.Size = UDim2.new(0, 30, 0, 30)
-    icon.Image = styleConfig.Icon
-    icon.ImageColor3 = Color3.fromRGB(255, 255, 255)
-    icon.ZIndex = 12
-    
-    local titleLabel = Instance.new("TextLabel")
-    titleLabel.Name = "Title"
-    titleLabel.Parent = header
-    titleLabel.BackgroundTransparency = 1
-    titleLabel.Position = UDim2.new(0, 40, 0, 0)
-    titleLabel.Size = UDim2.new(1, -100, 1, 0)
-    titleLabel.Font = Enum.Font.GothamBold
-    titleLabel.Text = string.upper(title)
-    titleLabel.TextColor3 = styleConfig.TextColor
-    titleLabel.TextSize = 18
-    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
-    titleLabel.ZIndex = 12
-    titleLabel.TextTransparency = 0.2
-    
-    local closeButton = Instance.new("ImageButton")
-    closeButton.Name = "CloseButton"
-    closeButton.Parent = header
-    closeButton.BackgroundTransparency = 1
-    closeButton.AnchorPoint = Vector2.new(1, 0.5)
-    closeButton.Position = UDim2.new(1, 0, 0.5, 0)
-    closeButton.Size = UDim2.new(0, 24, 0, 24)
-    closeButton.Image = "rbxassetid://10747385901"
-    closeButton.ImageColor3 = Color3.fromRGB(180, 180, 180)
-    closeButton.ZIndex = 15
-    
-    local body = Instance.new("Frame")
-    body.Name = "Body"
-    body.Parent = notification
-    body.BackgroundTransparency = 1
-    body.Position = UDim2.new(0, 15, 0, 65)
-    body.Size = UDim2.new(1, -30, 0, 0)
-    body.ZIndex = 11
-    
-    local messageLabel = Instance.new("TextLabel")
-    messageLabel.Name = "Message"
-    messageLabel.Parent = body
-    messageLabel.BackgroundTransparency = 1
-    messageLabel.Position = UDim2.new(0, 0, 0, 0)
-    messageLabel.Size = UDim2.new(1, 0, 0, 0)
-    messageLabel.Font = Enum.Font.Gotham
-    messageLabel.Text = message
-    messageLabel.TextColor3 = styleConfig.TextColor
-    messageLabel.TextSize = 14
-    messageLabel.TextWrapped = true
-    messageLabel.TextXAlignment = Enum.TextXAlignment.Left
-    messageLabel.TextYAlignment = Enum.TextYAlignment.Top
-    messageLabel.ZIndex = 12
-    messageLabel.RichText = true
-    
-    local textHeight = math.ceil(messageLabel.TextBounds.Y / 14) * 14 + 20
-    messageLabel.Size = UDim2.new(1, 0, 0, textHeight)
-    
-    local totalHeight = 80 + textHeight
-    body.Size = UDim2.new(1, -30, 0, textHeight)
-    
-    local function Close()
-        local closeTween = TweenService:Create(notification, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-            Position = UDim2.new(1.5, 0, notification.Position.Y.Scale, 0)
-        })
-        
-        closeTween:Play()
-        closeTween.Completed:Connect(function()
-            for i, notif in ipairs(activeNotifications) do
-                if notif.Frame == notification then
-                    table.remove(activeNotifications, i)
-                    break
-                end
-            end
-            
-            notification:Destroy()
-            UpdateNotificationsPositions()
-        end)
-    end
-    
-    closeButton.MouseButton1Click:Connect(Close)
-    
-    closeButton.MouseEnter:Connect(function()
-        TweenService:Create(closeButton, TweenInfo.new(0.2), {
-            ImageColor3 = Color3.fromRGB(255, 80, 80),
-            Rotation = 90,
-            Size = UDim2.new(0, 26, 0, 26)
-        }):Play()
-    end)
-    
-    closeButton.MouseLeave:Connect(function()
-        TweenService:Create(closeButton, TweenInfo.new(0.2), {
-            ImageColor3 = Color3.fromRGB(180, 180, 180),
-            Rotation = 0,
-            Size = UDim2.new(0, 24, 0, 24)
-        }):Play()
-    end)
-
-    table.insert(activeNotifications, {
-        Frame = notification,
-        Close = Close
-    })
-    
-    notification.Size = UDim2.new(0, 380, 0, totalHeight)
-    
-    local openTween = TweenService:Create(notification, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        Position = UDim2.new(0.98, 0, notification.Position.Y.Scale, 0)
-    })
-    
-    TweenService:Create(titleLabel, TweenInfo.new(0.4), {
-        TextTransparency = 0
-    }):Play()
-    
-    UpdateNotificationsPositions()
-    
-    openTween:Play()
-    
-    if duration > 0 then
-        task.delay(duration, function()
-            if notification and notification.Parent then
-                Close()
-            end
-        end)
-    end
-    
-    return {
-        Close = Close,
-        Frame = notification
-    }
+function NotificationLibrary.Success(title, message, duration)
+    return NotificationLibrary.Notify(title, message, "Success", duration)
 end
 
-function NotificationLibrary.Success(title, message, duration, options)
-    return NotificationLibrary.Notify(title, message, "Success", duration, options)
+function NotificationLibrary.Error(title, message, duration)
+    return NotificationLibrary.Notify(title, message, "Error", duration)
 end
 
-function NotificationLibrary.Error(title, message, duration, options)
-    return NotificationLibrary.Notify(title, message, "Error", duration, options)
+function NotificationLibrary.Warning(title, message, duration)
+    return NotificationLibrary.Notify(title, message, "Warning", duration)
 end
 
-function NotificationLibrary.Warning(title, message, duration, options)
-    return NotificationLibrary.Notify(title, message, "Warning", duration, options)
-end
-
-function NotificationLibrary.Info(title, message, duration, options)
-    return NotificationLibrary.Notify(title, message, "Info", duration, options)
-end
-
-function NotificationLibrary.Premium(title, message, duration, options)
-    return NotificationLibrary.Notify(title, message, "Premium", duration, options)
+function NotificationLibrary.Info(title, message, duration)
+    return NotificationLibrary.Notify(title, message, "Info", duration)
 end
 
 return NotificationLibrary
