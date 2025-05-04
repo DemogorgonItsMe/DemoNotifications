@@ -135,14 +135,6 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
     corner.CornerRadius = settings.CornerRadius
     corner.Parent = background
     
-    local glassEffect = Instance.new("Frame")
-    glassEffect.Name = "GlassEffect"
-    glassEffect.Size = UDim2.new(1, 0, 1, 0)
-    glassEffect.BackgroundTransparency = 0.95
-    glassEffect.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    glassEffect.BorderSizePixel = 0
-    glassEffect.Parent = background
-    
     local shadow = Instance.new("ImageLabel")
     shadow.Name = "Shadow"
     shadow.Size = UDim2.new(1, 10, 1, 10)
