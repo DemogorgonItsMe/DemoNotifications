@@ -128,7 +128,7 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
     background.Size = UDim2.new(1, 0, 1, 0)
     background.Position = UDim2.new(0, 0, 0, 0)
     background.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-    background.BackgroundTransparency = 0.1
+    background.BackgroundTransparency = 1
     background.Parent = notificationFrame
     
     local corner = Instance.new("UICorner")
