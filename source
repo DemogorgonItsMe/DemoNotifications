@@ -113,15 +113,6 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
         local oldestNotification = table.remove(self.notifications, 1)
         self:RemoveNotification(oldestNotification, 0.1)
     end
-    
-    local notificationFrame = Instance.new("Frame")
-    notificationFrame.Name = "Notification"
-    notificationFrame.BackgroundTransparency = 1
-    notificationFrame.Size = UDim2.new(settings.Width, UDim.new(0, 0))
-    notificationFrame.Position = settings.Position
-    notificationFrame.AnchorPoint = settings.AnchorPoint
-    notificationFrame.ClipsDescendants = true
-    notificationFrame.Parent = self.notificationsFolder
 
     local mask = Instance.new("Frame")
     mask.Name = "Mask"
