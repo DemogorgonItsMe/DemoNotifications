@@ -119,10 +119,12 @@ local function CreateNotification(title, message, style, duration)
     closeButton.Name = "CloseButton"
     closeButton.Parent = titleFrame
     closeButton.BackgroundTransparency = 1
-    closeButton.Position = UDim2.new(1, -35, 0.5, -10)
+    closeButton.AnchorPoint = Vector2.new(1, 0.5)
+    closeButton.Position = UDim2.new(1, -10, 0.5, 0)
     closeButton.Size = UDim2.new(0, 20, 0, 20)
     closeButton.Image = "rbxassetid://10747385901"
     closeButton.ImageColor3 = Color3.fromRGB(180, 180, 180)
+    closeButton.ZIndex = 5 
     
     local messageLabel = Instance.new("TextLabel")
     messageLabel.Name = "Message"
