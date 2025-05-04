@@ -130,10 +130,30 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
     background.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     background.BackgroundTransparency = 0.1
     background.Parent = notificationFrame
-    
+
+    local mask = Instance.new("Frame")
+    mask.Name = "Mask"
+    mask.Size = UDim2.new(1, 0, 1, 0)
+    mask.BackgroundColor3 = background.BackgroundColor3
+    mask.BackgroundTransparency = 0
+    mask.ClipsDescendants = true
+    mask.Parent = background
+
     local corner = Instance.new("UICorner")
     corner.CornerRadius = settings.CornerRadius
-    corner.Parent = background
+    corner.Parent = mask
+    
+    local shadow = Instance.new("ImageLabel")
+    shadow.Name = "Shadow"
+    shadow.Size = UDim2.new(1, 10, 1, 10)
+    shadow.Position = UDim2.new(0, -5, 0, -5)
+    shadow.BackgroundTransparency = 1
+    shadow.Image = "rbxassetid://5554236805"
+    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    shadow.ImageTransparency = 0.8
+    shadow.ScaleType = Enum.ScaleType.Slice
+    shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+    shadow.Parent = notificationFrame
     
     local accentBar = Instance.new("Frame")
     accentBar.Name = "AccentBar"
@@ -141,12 +161,18 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
     accentBar.Position = UDim2.new(0, 5, 0, 10)
     accentBar.BackgroundColor3 = settings.Colors[notificationType] or settings.Colors.Custom
     accentBar.BorderSizePixel = 0
-    
+
+    local accentMask = Instance.new("Frame")
+    accentMask.Name = "AccentMask"
+    accentMask.Size = UDim2.new(1, 0, 1, 0)
+    accentMask.BackgroundColor3 = accentBar.BackgroundColor3
+    accentMask.ClipsDescendants = true
+    accentMask.Parent = accentBar
+
     local accentCorner = Instance.new("UICorner")
     accentCorner.CornerRadius = UDim.new(0, 3)
-    accentCorner.Parent = accentBar
-    
-    accentBar.Parent = background
+    accentCorner.Parent = accentMask
+    accentBar.Parent = mask
     
     local icon = Instance.new("ImageLabel")
     icon.Name = "Icon"
@@ -155,7 +181,7 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
     icon.BackgroundTransparency = 1
     icon.Image = settings.Icons[notificationType] or settings.Icons.Info
     icon.ImageColor3 = settings.Colors[notificationType] or settings.Colors.Custom
-    icon.Parent = background
+    icon.Parent = mask
     
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Name = "Title"
@@ -168,7 +194,7 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
     titleLabel.TextSize = 18
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.TextYAlignment = Enum.TextYAlignment.Center
-    titleLabel.Parent = background
+    titleLabel.Parent = mask
     
     local messageLabel = Instance.new("TextLabel")
     messageLabel.Name = "Message"
@@ -182,7 +208,7 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
     messageLabel.TextXAlignment = Enum.TextXAlignment.Left
     messageLabel.TextYAlignment = Enum.TextYAlignment.Top
     messageLabel.TextWrapped = true
-    messageLabel.Parent = background
+    messageLabel.Parent = mask
     
     local closeButton = Instance.new("ImageButton")
     closeButton.Name = "CloseButton"
@@ -191,29 +217,35 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
     closeButton.BackgroundTransparency = 1
     closeButton.Image = "rbxassetid://6031090991"
     closeButton.ImageColor3 = Color3.fromRGB(180, 180, 180)
-    closeButton.Parent = background
+    closeButton.Parent = mask
     
     setupParallaxEffect(closeButton)
-    
+
     local progressBar = Instance.new("Frame")
     progressBar.Name = "ProgressBar"
     progressBar.Size = UDim2.new(1, -10, 0, 3)
     progressBar.Position = UDim2.new(0, 5, 1, -8)
     progressBar.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
     progressBar.BorderSizePixel = 0
-    
+
+    local progressMask = Instance.new("Frame")
+    progressMask.Name = "ProgressMask"
+    progressMask.Size = UDim2.new(1, 0, 1, 0)
+    progressMask.BackgroundColor3 = progressBar.BackgroundColor3
+    progressMask.ClipsDescendants = true
+    progressMask.Parent = progressBar
+
     local progressCorner = Instance.new("UICorner")
     progressCorner.CornerRadius = UDim.new(0, 3)
-    progressCorner.Parent = progressBar
-    
-    progressBar.Parent = background
-    
+    progressCorner.Parent = progressMask
+
     local progressFill = Instance.new("Frame")
     progressFill.Name = "ProgressFill"
     progressFill.Size = UDim2.new(1, 0, 1, 0)
     progressFill.BackgroundColor3 = settings.Colors[notificationType] or settings.Colors.Custom
     progressFill.BorderSizePixel = 0
-    progressFill.Parent = progressBar
+    progressFill.Parent = progressMask
+    progressBar.Parent = mask
     
     notificationFrame.Size = UDim2.new(settings.Width, UDim.new(0, 0))
     
@@ -231,16 +263,15 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
         game:GetService("Debris"):AddItem(sound, 3)
     end
     
-    local duration = settings.Duration
     spawn(function()
         progressFill.Size = UDim2.new(1, 0, 1, 0)
-        tween(progressFill, {Size = UDim2.new(0, 0, 1, 0)}, duration, Enum.EasingStyle.Linear)
+        tween(progressFill, {Size = UDim2.new(0, 0, 1, 0)}, settings.Duration, Enum.EasingStyle.Linear)
     end)
     
     local removeConnection
     removeConnection = game:GetService("RunService").Heartbeat:Connect(function(dt)
-        duration = duration - dt
-        if duration <= 0 then
+        settings.Duration = settings.Duration - dt
+        if settings.Duration <= 0 then
             removeConnection:Disconnect()
             self:RemoveNotification(notificationFrame, settings.AnimationSpeed)
         end
