@@ -25,7 +25,7 @@ local DEFAULT_SETTINGS = {
         Success = "rbxassetid://3450794184",
         Error = "rbxassetid://3779045779",
         Warning = "rbxassetid://1570162306",
-        Info = "rbxassetid://1758229986"
+        Info = "rbxassetid://4590662766"
     },
     Width = UDim.new(0.3, 0),
     CornerRadius = UDim.new(0, 12)
