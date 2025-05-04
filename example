@@ -1,10 +1,32 @@
-local Notifications = loadstring(game:HttpGet('https://raw.githubusercontent.com/DemogorgonItsMe/DemoNotifications/refs/heads/main/source'))()
-Notifications.Success("Successfully!", "Let's go!", 2)
-wait(1)
-Notifications.Error("Error", "Hell no", 2)
-wait(1)
-Notifications.Warning("Warning", "This library is cool", 2)
-wait(1)
-Notifications.Info("Information", "Library by Demogorgon!", 2)
-wait(1)
-Notifications.Premium("Premium", "You have access!", 0) -- if duration = 0, it closes using the button
+local BeautifulNotifications = loadstring(game:HttpGet("https://raw.githubusercontent.com/DemogorgonItsMe/DemoNotifications/refs/heads/main/source"))()
+-- Initialization with settings
+local notifier = BeautifulNotifications.init({
+    Duration = 7, -- Notification duration
+    MaxNotifications = 4, -- The maximum number of notifications
+    Width = UDim.new(0.35, 0) -- Width of notifications
+})
+
+-- success notification
+notifier:Success("Successfully!", "Let's go!", {
+    Duration = 3 -- you can change the duration separately
+})
+-- error notification
+notifier:Error("Error", "Hell no")
+-- warning notification
+notifier:Warning("Warning", "very cool library!")
+-- info notification
+notifier:Warning("Info", "library by Demogorgon!")
+notifier:Custom("Custom notification", "Any color and icon", 
+    Color3.fromRGB(255, 105, 180), -- color
+    "rbxassetid://6031091004", -- icon id
+    {
+        Duration = 10, -- duration
+        CornerRadius = UDim.new(0, 12) -- corner
+    }
+)
+local notifier2 = BeautifulNotifications.init({ -- you can multiple notifiers
+    Duration = 5,
+    MaxNotifications = 2,
+    Width = UDim.new(0.35, 0)
+})
+notifier2:Success("Successfully!", "Let's go!")
