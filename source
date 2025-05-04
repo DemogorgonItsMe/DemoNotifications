@@ -18,7 +18,7 @@ local DEFAULT_SETTINGS = {
     Icons = {
         Success = "rbxassetid://11157772247",
         Error = "rbxassetid://9734956085",
-        Warning = "rbxassetid://85147473315465",
+        Warning = "rbxassetid://12176108045",
         Info = "rbxassetid://9405926389"
     },
     Sounds = {
