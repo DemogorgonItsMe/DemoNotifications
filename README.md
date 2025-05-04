@@ -5,5 +5,5 @@ status variants:
 -Warning
 -Info
 -Premium
-Notifications.STATUSNAMEHERE("TITLE", "DESCRIPTION", 5) -- 5 is the duration
+script: Notifications.STATUSNAMEHERE("TITLE", "DESCRIPTION", 5) -- 5 is the duration
 you can also check the example
