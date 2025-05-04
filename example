@@ -15,7 +15,7 @@ notifier:Error("Error", "Hell no")
 -- warning notification
 notifier:Warning("Warning", "very cool library!")
 -- info notification
-notifier:Warning("Info", "library by Demogorgon!")
+notifier:Info("Info", "library by Demogorgon!")
 notifier:Custom("Custom notification", "Any color and icon", 
     Color3.fromRGB(255, 105, 180), -- color
     "rbxassetid://6031091004", -- icon id
