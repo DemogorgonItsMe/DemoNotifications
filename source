@@ -22,10 +22,10 @@ local DEFAULT_SETTINGS = {
         Info = "rbxassetid://9405926389"
     },
     Sounds = {
-        Success = "rbxassetid://6537568442",
-        Error = "rbxassetid://6537568442",
-        Warning = "rbxassetid://6537568442",
-        Info = "rbxassetid://6537568442"
+        Success = "rbxassetid://3450794184",
+        Error = "rbxassetid://3779045779",
+        Warning = "rbxassetid://1570162306",
+        Info = "rbxassetid://17582299860"
     }
 }
 
