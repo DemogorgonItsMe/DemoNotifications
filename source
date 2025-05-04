@@ -18,15 +18,17 @@ local DEFAULT_SETTINGS = {
     Icons = {
         Success = "rbxassetid://11157772247",
         Error = "rbxassetid://9734956085",
-        Warning = "rbxassetid://85147473315465",
+        Warning = "rbxassetid://8514747331",
         Info = "rbxassetid://9405926389"
     },
     Sounds = {
         Success = "rbxassetid://3450794184",
         Error = "rbxassetid://3779045779",
         Warning = "rbxassetid://1570162306",
-        Info = "rbxassetid://17582299860"
-    }
+        Info = "rbxassetid://1758229986"
+    },
+    Width = UDim.new(0.3, 0),
+    CornerRadius = UDim.new(0, 8)
 }
 
 function BeautifulNotifications:CreateBaseElements()
@@ -83,11 +85,11 @@ local function setupParallaxEffect(button)
     local originalPosition = button.Position
     
     button.MouseEnter:Connect(function()
-        tween(button, {Size = originalSize + UDim2.new(0, 4, 0, 4)}, 0.1)
+        tween(button, {Size = originalSize + UDim2.new(0, 4, 0, 4), Rotation = 5}, 0.1)
     end)
     
     button.MouseLeave:Connect(function()
-        tween(button, {Size = originalSize}, 0.1)
+        tween(button, {Size = originalSize, Rotation = 0}, 0.1)
     end)
     
     button.MouseButton1Down:Connect(function()
@@ -115,7 +117,7 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
     local notificationFrame = Instance.new("Frame")
     notificationFrame.Name = "Notification"
     notificationFrame.BackgroundTransparency = 1
-    notificationFrame.Size = UDim2.new(0.3, 0, 0, 0)
+    notificationFrame.Size = UDim2.new(settings.Width, UDim.new(0, 0))
     notificationFrame.Position = settings.Position
     notificationFrame.AnchorPoint = settings.AnchorPoint
     notificationFrame.ClipsDescendants = true
@@ -125,9 +127,13 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
     background.Name = "Background"
     background.Size = UDim2.new(1, 0, 1, 0)
     background.Position = UDim2.new(0, 0, 0, 0)
-    background.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    background.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
     background.BackgroundTransparency = 0.1
     background.Parent = notificationFrame
+    
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = settings.CornerRadius
+    corner.Parent = background
     
     local glassEffect = Instance.new("Frame")
     glassEffect.Name = "GlassEffect"
@@ -155,11 +161,16 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
     accentBar.Position = UDim2.new(0, 5, 0, 10)
     accentBar.BackgroundColor3 = settings.Colors[notificationType] or settings.Colors.Custom
     accentBar.BorderSizePixel = 0
+    
+    local accentCorner = Instance.new("UICorner")
+    accentCorner.CornerRadius = UDim.new(0, 3)
+    accentCorner.Parent = accentBar
+    
     accentBar.Parent = background
     
     local icon = Instance.new("ImageLabel")
     icon.Name = "Icon"
-    icon.Size = UDim2.new(0, 24, 0, 24)
+    icon.Size = UDim2.new(0, 28, 0, 28)
     icon.Position = UDim2.new(0, 20, 0, 15)
     icon.BackgroundTransparency = 1
     icon.Image = settings.Icons[notificationType] or settings.Icons.Info
@@ -168,25 +179,25 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
     
     local titleLabel = Instance.new("TextLabel")
     titleLabel.Name = "Title"
-    titleLabel.Size = UDim2.new(0.7, -50, 0, 20)
-    titleLabel.Position = UDim2.new(0, 50, 0, 15)
+    titleLabel.Size = UDim2.new(0.7, -60, 0, 24)
+    titleLabel.Position = UDim2.new(0, 60, 0, 15)
     titleLabel.BackgroundTransparency = 1
     titleLabel.Font = Enum.Font.GothamBold
     titleLabel.Text = title or "Notification"
     titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.TextSize = 16
+    titleLabel.TextSize = 18
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.TextYAlignment = Enum.TextYAlignment.Center
     titleLabel.Parent = background
     
     local messageLabel = Instance.new("TextLabel")
     messageLabel.Name = "Message"
-    messageLabel.Size = UDim2.new(1, -30, 1, -50)
-    messageLabel.Position = UDim2.new(0, 15, 0, 40)
+    messageLabel.Size = UDim2.new(1, -30, 1, -60)
+    messageLabel.Position = UDim2.new(0, 15, 0, 50)
     messageLabel.BackgroundTransparency = 1
     messageLabel.Font = Enum.Font.Gotham
     messageLabel.Text = message or ""
-    messageLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    messageLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
     messageLabel.TextSize = 14
     messageLabel.TextXAlignment = Enum.TextXAlignment.Left
     messageLabel.TextYAlignment = Enum.TextYAlignment.Top
@@ -195,21 +206,26 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
     
     local closeButton = Instance.new("ImageButton")
     closeButton.Name = "CloseButton"
-    closeButton.Size = UDim2.new(0, 20, 0, 20)
-    closeButton.Position = UDim2.new(1, -25, 0, 15)
+    closeButton.Size = UDim2.new(0, 24, 0, 24)
+    closeButton.Position = UDim2.new(1, -30, 0, 15)
     closeButton.BackgroundTransparency = 1
     closeButton.Image = "rbxassetid://6031090991"
-    closeButton.ImageColor3 = Color3.fromRGB(150, 150, 150)
+    closeButton.ImageColor3 = Color3.fromRGB(180, 180, 180)
     closeButton.Parent = background
     
     setupParallaxEffect(closeButton)
-
+    
     local progressBar = Instance.new("Frame")
     progressBar.Name = "ProgressBar"
     progressBar.Size = UDim2.new(1, -10, 0, 3)
     progressBar.Position = UDim2.new(0, 5, 1, -8)
-    progressBar.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+    progressBar.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
     progressBar.BorderSizePixel = 0
+    
+    local progressCorner = Instance.new("UICorner")
+    progressCorner.CornerRadius = UDim.new(0, 3)
+    progressCorner.Parent = progressBar
+    
     progressBar.Parent = background
     
     local progressFill = Instance.new("Frame")
@@ -219,10 +235,10 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
     progressFill.BorderSizePixel = 0
     progressFill.Parent = progressBar
     
-    notificationFrame.Size = UDim2.new(0.3, 0, 0, 0)
+    notificationFrame.Size = UDim2.new(settings.Width, UDim.new(0, 0))
     
-    local textHeight = math.min(100, messageLabel.TextBounds.Y + 60)
-    local targetSize = UDim2.new(0.3, 0, 0, textHeight)
+    local textHeight = math.min(150, messageLabel.TextBounds.Y + 80)
+    local targetSize = UDim2.new(settings.Width, UDim.new(0, textHeight))
     
     tween(notificationFrame, {Size = targetSize, BackgroundTransparency = 0}, settings.AnimationSpeed, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
     
@@ -235,15 +251,16 @@ function BeautifulNotifications:CreateNotification(title, message, notificationT
         game:GetService("Debris"):AddItem(sound, 3)
     end
     
+    local duration = settings.Duration
     spawn(function()
         progressFill.Size = UDim2.new(1, 0, 1, 0)
-        tween(progressFill, {Size = UDim2.new(0, 0, 1, 0)}, settings.Duration, Enum.EasingStyle.Linear)
+        tween(progressFill, {Size = UDim2.new(0, 0, 1, 0)}, duration, Enum.EasingStyle.Linear)
     end)
     
     local removeConnection
     removeConnection = game:GetService("RunService").Heartbeat:Connect(function(dt)
-        settings.Duration = settings.Duration - dt
-        if settings.Duration <= 0 then
+        duration = duration - dt
+        if duration <= 0 then
             removeConnection:Disconnect()
             self:RemoveNotification(notificationFrame, settings.AnimationSpeed)
         end
@@ -283,12 +300,16 @@ end
 function BeautifulNotifications:UpdateNotificationsPositions()
     local settings = self.settings
     local startPosition = settings.Position.Y.Scale
+    local screenHeight = self.screenGui.AbsoluteSize.Y
     
     for i, notification in ipairs(self.notifications) do
+        local notificationHeight = notification.AbsoluteSize.Y / screenHeight
+        local spacing = settings.Spacing / screenHeight
+        
         local targetPosition = UDim2.new(
             settings.Position.X.Scale,
             settings.Position.X.Offset,
-            startPosition - (i * (notification.AbsoluteSize.Y / notification.Parent.AbsoluteSize.Y + settings.Spacing)),
+            startPosition - (i-1) * (notificationHeight + spacing),
             0
         )
         
