@@ -4,97 +4,71 @@ local RunService = game:GetService("RunService")
 
 local STYLES = {
     Success = {
-        MainColor = Color3.fromRGB(46, 213, 115),
-        Icon = "rbxassetid://10747384390",
-        Gradient = {
-            Color = ColorSequence.new{
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(46, 213, 115)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(32, 178, 100))
-            },
-            Rotation = 90
-        },
-        ParticleColor = Color3.fromRGB(46, 213, 115)
+        MainColor = Color3.fromRGB(40, 200, 110),
+        Icon = "rbxassetid://11157772247",
+        AccentColor = Color3.fromRGB(30, 180, 90),
+        TextColor = Color3.fromRGB(240, 255, 240),
+        GlowColor = Color3.fromRGB(40, 200, 110)
     },
     Error = {
-        MainColor = Color3.fromRGB(255, 71, 87),
-        Icon = "rbxassetid://10747384876",
-        Gradient = {
-            Color = ColorSequence.new{
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 71, 87)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(214, 48, 49))
-            },
-            Rotation = 90
-        },
-        ParticleColor = Color3.fromRGB(255, 71, 87)
+        MainColor = Color3.fromRGB(240, 80, 80),
+        Icon = "rbxassetid://9734956085",
+        AccentColor = Color3.fromRGB(220, 60, 60),
+        TextColor = Color3.fromRGB(255, 240, 240),
+        GlowColor = Color3.fromRGB(240, 80, 80)
     },
     Warning = {
-        MainColor = Color3.fromRGB(255, 165, 0),
-        Icon = "rbxassetid://10747385123",
-        Gradient = {
-            Color = ColorSequence.new{
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 165, 0)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(255, 140, 0))
-            },
-            Rotation = 90
-        },
-        ParticleColor = Color3.fromRGB(255, 165, 0)
+        MainColor = Color3.fromRGB(255, 180, 40),
+        Icon = "rbxassetid://85147473315465",
+        AccentColor = Color3.fromRGB(235, 160, 20),
+        TextColor = Color3.fromRGB(50, 40, 10),
+        GlowColor = Color3.fromRGB(255, 180, 40)
     },
     Info = {
-        MainColor = Color3.fromRGB(0, 168, 255),
-        Icon = "rbxassetid://10747385345",
-        Gradient = {
-            Color = ColorSequence.new{
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(0, 168, 255)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 120, 215))
-            },
-            Rotation = 90
-        },
-        ParticleColor = Color3.fromRGB(0, 168, 255)
+        MainColor = Color3.fromRGB(60, 160, 255),
+        Icon = "rbxassetid://9405926389",
+        AccentColor = Color3.fromRGB(40, 140, 235),
+        TextColor = Color3.fromRGB(240, 248, 255),
+        GlowColor = Color3.fromRGB(60, 160, 255)
     },
     Premium = {
-        MainColor = Color3.fromRGB(156, 39, 176),
-        Icon = "rbxassetid://10747385567",
-        Gradient = {
-            Color = ColorSequence.new{
-                ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 64, 129)),
-                ColorSequenceKeypoint.new(0.5, Color3.fromRGB(156, 39, 176)),
-                ColorSequenceKeypoint.new(1, Color3.fromRGB(103, 58, 183))
-            },
-            Rotation = 90
-        },
-        ParticleColor = Color3.fromRGB(238, 130, 238)
+        MainColor = Color3.fromRGB(180, 60, 220),
+        Icon = "rbxassetid://993482650",
+        AccentColor = Color3.fromRGB(160, 40, 200),
+        TextColor = Color3.fromRGB(255, 240, 255),
+        GlowColor = Color3.fromRGB(180, 60, 220)
     }
 }
 
+local activeNotifications = {}
+local notificationOffset = 0
+local baseYPosition = 0.1
+local spacing = 10
+
 local PlayerGui = game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui")
 local NotificationScreen = Instance.new("ScreenGui")
-NotificationScreen.Name = "PremiumNotifications"
+NotificationScreen.Name = "PremiumNotificationsV2"
 NotificationScreen.Parent = PlayerGui
 NotificationScreen.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
 NotificationScreen.ResetOnSpawn = false
 
-local function CreateParticles(parent, color)
-    local particleEmitter = Instance.new("ParticleEmitter")
-    particleEmitter.Parent = parent
-    particleEmitter.LightEmission = 0.5
-    particleEmitter.Color = ColorSequence.new(color)
-    particleEmitter.Size = NumberSequence.new(0.2)
-    particleEmitter.Texture = "rbxassetid://9872478095"
-    particleEmitter.Lifetime = NumberRange.new(1, 1.5)
-    particleEmitter.Rate = 15
-    particleEmitter.Rotation = NumberRange.new(0, 360)
-    particleEmitter.RotSpeed = NumberRange.new(-30, 30)
-    particleEmitter.Speed = NumberRange.new(2, 5)
-    particleEmitter.SpreadAngle = Vector2.new(45, 45)
-    particleEmitter.Shape = Enum.ParticleEmitterShape.Disc
-    particleEmitter.EmissionDirection = Enum.NormalId.Top
-    particleEmitter.Enabled = false
-    
-    return particleEmitter
+local function UpdateNotificationsPositions()
+    local totalHeight = 0
+    for i, notif in ipairs(activeNotifications) do
+        if notif and notif.Frame and notif.Frame.Parent then
+            local targetY = baseYPosition + (totalHeight / PlayerGui.AbsoluteSize.Y)
+            TweenService:Create(notif.Frame, TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+                Position = UDim2.new(0.98, 0, targetY, 0)
+            }):Play()
+            
+            totalHeight = totalHeight + notif.Frame.AbsoluteSize.Y + spacing
+        else
+            table.remove(activeNotifications, i)
+        end
+    end
 end
 
 function NotificationLibrary.Notify(title, message, style, duration, options)
-    -- Настройки по умолчанию
     style = style or "Info"
     duration = duration or 5
     options = options or {}
@@ -105,8 +79,8 @@ function NotificationLibrary.Notify(title, message, style, duration, options)
     notification.Name = "Notification_"..style
     notification.Parent = NotificationScreen
     notification.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
-    notification.Position = UDim2.new(1, 10, 0.7, 0)
-    notification.Size = UDim2.new(0, 350, 0, 0)
+    notification.Position = UDim2.new(1.2, 0, baseYPosition + (notificationOffset / PlayerGui.AbsoluteSize.Y), 0)
+    notification.Size = UDim2.new(0, 380, 0, 0)
     notification.AnchorPoint = Vector2.new(1, 0)
     notification.ClipsDescendants = true
     notification.ZIndex = 10
@@ -115,53 +89,45 @@ function NotificationLibrary.Notify(title, message, style, duration, options)
     corner.CornerRadius = UDim.new(0, 14)
     corner.Parent = notification
     
-    local stroke = Instance.new("UIStroke")
-    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-    stroke.Color = styleConfig.MainColor
-    stroke.LineJoinMode = Enum.LineJoinMode.Round
-    stroke.Thickness = 2
-    stroke.Transparency = 0
-    stroke.Parent = notification
+    local shadow = Instance.new("ImageLabel")
+    shadow.Name = "Shadow"
+    shadow.Parent = notification
+    shadow.BackgroundTransparency = 1
+    shadow.Size = UDim2.new(1, 20, 1, 20)
+    shadow.Position = UDim2.new(0.5, -10, 0.5, -10)
+    shadow.AnchorPoint = Vector2.new(0.5, 0.5)
+    shadow.Image = "rbxassetid://1316045217"
+    shadow.ImageColor3 = Color3.fromRGB(0, 0, 0)
+    shadow.ImageTransparency = 0.8
+    shadow.ScaleType = Enum.ScaleType.Slice
+    shadow.SliceCenter = Rect.new(10, 10, 118, 118)
+    shadow.ZIndex = -1
     
-    local gradient = Instance.new("UIGradient")
-    gradient.Color = styleConfig.Gradient.Color
-    gradient.Rotation = styleConfig.Gradient.Rotation
-    gradient.Parent = stroke
+    local accentBar = Instance.new("Frame")
+    accentBar.Name = "AccentBar"
+    accentBar.Parent = notification
+    accentBar.BackgroundColor3 = styleConfig.AccentColor
+    accentBar.Size = UDim2.new(0, 6, 1, 0)
+    accentBar.Position = UDim2.new(0, 0, 0, 0)
+    accentBar.ZIndex = 11
     
-    local glow = Instance.new("ImageLabel")
-    glow.Name = "Glow"
-    glow.Parent = notification
-    glow.BackgroundTransparency = 1
-    glow.Size = UDim2.new(1, 40, 1, 40)
-    glow.Position = UDim2.new(0.5, -20, 0.5, -20)
-    glow.AnchorPoint = Vector2.new(0.5, 0.5)
-    glow.Image = "rbxassetid://9872478095"
-    glow.ImageColor3 = styleConfig.MainColor
-    glow.ScaleType = Enum.ScaleType.Slice
-    glow.SliceCenter = Rect.new(50, 50, 50, 50)
-    glow.ZIndex = 0
-    glow.ImageTransparency = 0.9
-    
-    local glowTween = TweenService:Create(glow, TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut, -1, true), {
-        ImageTransparency = 0.7
-    })
+    local accentCorner = Instance.new("UICorner")
+    accentCorner.CornerRadius = UDim.new(0, 3)
+    accentCorner.Parent = accentBar
     
     local header = Instance.new("Frame")
     header.Name = "Header"
     header.Parent = notification
-    header.BackgroundColor3 = Color3.fromRGB(35, 35, 50)
-    header.Size = UDim2.new(1, 0, 0, 50)
+    header.BackgroundTransparency = 1
+    header.Size = UDim2.new(1, -20, 0, 50)
+    header.Position = UDim2.new(0, 15, 0, 10)
     header.ZIndex = 11
-    
-    local headerCorner = Instance.new("UICorner")
-    headerCorner.CornerRadius = UDim.new(0, 12)
-    headerCorner.Parent = header
     
     local icon = Instance.new("ImageLabel")
     icon.Name = "Icon"
     icon.Parent = header
     icon.BackgroundTransparency = 1
-    icon.Position = UDim2.new(0, 15, 0.5, -15)
+    icon.Position = UDim2.new(0, 0, 0.5, -15)
     icon.Size = UDim2.new(0, 30, 0, 30)
     icon.Image = styleConfig.Icon
     icon.ImageColor3 = Color3.fromRGB(255, 255, 255)
@@ -171,12 +137,12 @@ function NotificationLibrary.Notify(title, message, style, duration, options)
     titleLabel.Name = "Title"
     titleLabel.Parent = header
     titleLabel.BackgroundTransparency = 1
-    titleLabel.Position = UDim2.new(0, 60, 0, 0)
+    titleLabel.Position = UDim2.new(0, 40, 0, 0)
     titleLabel.Size = UDim2.new(1, -100, 1, 0)
     titleLabel.Font = Enum.Font.GothamBold
     titleLabel.Text = string.upper(title)
-    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-    titleLabel.TextSize = 16
+    titleLabel.TextColor3 = styleConfig.TextColor
+    titleLabel.TextSize = 18
     titleLabel.TextXAlignment = Enum.TextXAlignment.Left
     titleLabel.ZIndex = 12
     titleLabel.TextTransparency = 0.2
@@ -186,17 +152,68 @@ function NotificationLibrary.Notify(title, message, style, duration, options)
     closeButton.Parent = header
     closeButton.BackgroundTransparency = 1
     closeButton.AnchorPoint = Vector2.new(1, 0.5)
-    closeButton.Position = UDim2.new(1, -15, 0.5, 0)
-    closeButton.Size = UDim2.new(0, 20, 0, 20)
+    closeButton.Position = UDim2.new(1, 0, 0.5, 0)
+    closeButton.Size = UDim2.new(0, 24, 0, 24)
     closeButton.Image = "rbxassetid://10747385901"
     closeButton.ImageColor3 = Color3.fromRGB(180, 180, 180)
     closeButton.ZIndex = 15
+    
+    local body = Instance.new("Frame")
+    body.Name = "Body"
+    body.Parent = notification
+    body.BackgroundTransparency = 1
+    body.Position = UDim2.new(0, 15, 0, 65)
+    body.Size = UDim2.new(1, -30, 0, 0)
+    body.ZIndex = 11
+    
+    local messageLabel = Instance.new("TextLabel")
+    messageLabel.Name = "Message"
+    messageLabel.Parent = body
+    messageLabel.BackgroundTransparency = 1
+    messageLabel.Position = UDim2.new(0, 0, 0, 0)
+    messageLabel.Size = UDim2.new(1, 0, 0, 0)
+    messageLabel.Font = Enum.Font.Gotham
+    messageLabel.Text = message
+    messageLabel.TextColor3 = styleConfig.TextColor
+    messageLabel.TextSize = 14
+    messageLabel.TextWrapped = true
+    messageLabel.TextXAlignment = Enum.TextXAlignment.Left
+    messageLabel.TextYAlignment = Enum.TextYAlignment.Top
+    messageLabel.ZIndex = 12
+    messageLabel.RichText = true
+    
+    local textHeight = math.ceil(messageLabel.TextBounds.Y / 14) * 14 + 20
+    messageLabel.Size = UDim2.new(1, 0, 0, textHeight)
+    
+    local totalHeight = 80 + textHeight
+    body.Size = UDim2.new(1, -30, 0, textHeight)
+    
+    local function Close()
+        local closeTween = TweenService:Create(notification, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            Position = UDim2.new(1.5, 0, notification.Position.Y.Scale, 0)
+        })
+        
+        closeTween:Play()
+        closeTween.Completed:Connect(function()
+            for i, notif in ipairs(activeNotifications) do
+                if notif.Frame == notification then
+                    table.remove(activeNotifications, i)
+                    break
+                end
+            end
+            
+            notification:Destroy()
+            UpdateNotificationsPositions()
+        end)
+    end
+    
+    closeButton.MouseButton1Click:Connect(Close)
     
     closeButton.MouseEnter:Connect(function()
         TweenService:Create(closeButton, TweenInfo.new(0.2), {
             ImageColor3 = Color3.fromRGB(255, 80, 80),
             Rotation = 90,
-            Size = UDim2.new(0, 22, 0, 22)
+            Size = UDim2.new(0, 26, 0, 26)
         }):Play()
     end)
     
@@ -204,72 +221,28 @@ function NotificationLibrary.Notify(title, message, style, duration, options)
         TweenService:Create(closeButton, TweenInfo.new(0.2), {
             ImageColor3 = Color3.fromRGB(180, 180, 180),
             Rotation = 0,
-            Size = UDim2.new(0, 20, 0, 20)
+            Size = UDim2.new(0, 24, 0, 24)
         }):Play()
     end)
-    
-    local body = Instance.new("Frame")
-    body.Name = "Body"
-    body.Parent = notification
-    body.BackgroundTransparency = 1
-    body.Position = UDim2.new(0, 0, 0, 55)
-    body.Size = UDim2.new(1, 0, 0, 0)
-    body.ZIndex = 11
-    
-    local messageLabel = Instance.new("TextLabel")
-    messageLabel.Name = "Message"
-    messageLabel.Parent = body
-    messageLabel.BackgroundTransparency = 1
-    messageLabel.Position = UDim2.new(0, 15, 0, 10)
-    messageLabel.Size = UDim2.new(1, -30, 0, 0)
-    messageLabel.Font = Enum.Font.Gotham
-    messageLabel.Text = message
-    messageLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
-    messageLabel.TextSize = 14
-    messageLabel.TextWrapped = true
-    messageLabel.TextXAlignment = Enum.TextXAlignment.Left
-    messageLabel.TextYAlignment = Enum.TextYAlignment.Top
-    messageLabel.ZIndex = 12
-    
-    local textHeight = math.ceil(messageLabel.TextBounds.Y / 14) * 14 + 20
-    messageLabel.Size = UDim2.new(1, -30, 0, textHeight)
-    
-    local totalHeight = 55 + textHeight + 15
-    body.Size = UDim2.new(1, 0, 0, textHeight + 5)
-    
-    local particles = CreateParticles(notification, styleConfig.ParticleColor)
-    
-    local function Close()
-        particles.Enabled = false
-        
-        local closeTween = TweenService:Create(notification, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
-            Position = UDim2.new(1.2, 0, notification.Position.Y.Scale, notification.Position.Y.Offset),
-            BackgroundTransparency = 1,
-            Size = UDim2.new(0, 350, 0, 0)
-        })
-        
-        closeTween:Play()
-        closeTween.Completed:Connect(function()
-            notification:Destroy()
-        end)
-    end
-    
-    closeButton.MouseButton1Click:Connect(Close)
-    
-    notification.Size = UDim2.new(0, 350, 0, 0)
-    
-    local openTween = TweenService:Create(notification, TweenInfo.new(0.6, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
-        Size = UDim2.new(0, 350, 0, totalHeight)
+
+    table.insert(activeNotifications, {
+        Frame = notification,
+        Close = Close
     })
     
-    openTween:Play()
-    glowTween:Play()
-    task.wait(0.3)
-    particles.Enabled = true
+    notification.Size = UDim2.new(0, 380, 0, totalHeight)
+    
+    local openTween = TweenService:Create(notification, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Position = UDim2.new(0.98, 0, notification.Position.Y.Scale, 0)
+    })
     
     TweenService:Create(titleLabel, TweenInfo.new(0.4), {
         TextTransparency = 0
     }):Play()
+    
+    UpdateNotificationsPositions()
+    
+    openTween:Play()
     
     if duration > 0 then
         task.delay(duration, function()
