@@ -1,0 +1,227 @@
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local NotificationHolder = Instance.new("ScreenGui")
+NotificationHolder.Name = "PremiumNotifications"
+NotificationHolder.Parent = playerGui
+NotificationHolder.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+NotificationHolder.ResetOnSpawn = false
+
+local styles = {
+    Success = {
+        Color = Color3.fromRGB(46, 204, 113),
+        Icon = "rbxassetid://10747384390"
+    },
+    Error = {
+        Color = Color3.fromRGB(231, 76, 60),
+        Icon = "rbxassetid://10747384876"
+    },
+    Warning = {
+        Color = Color3.fromRGB(241, 196, 15),
+        Icon = "rbxassetid://10747385123"
+    },
+    Info = {
+        Color = Color3.fromRGB(52, 152, 219),
+        Icon = "rbxassetid://10747385345"
+    },
+    Premium = {
+        Color = Color3.fromRGB(155, 89, 182),
+        Icon = "rbxassetid://10747385567",
+        Gradient = {
+            Color = ColorSequence.new{
+                ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 105, 180)),
+                ColorSequenceKeypoint.new(1.00, Color3.fromRGB(155, 89, 182))
+            },
+            Rotation = 90
+        }
+    }
+}
+
+local function CreateNotification(title, message, style, duration)
+    duration = duration or 5
+    
+    local notification = Instance.new("Frame")
+    notification.Name = "Notification"
+    notification.Parent = NotificationHolder
+    notification.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+    notification.Position = UDim2.new(1, 10, 0.7, 0)
+    notification.Size = UDim2.new(0, 300, 0, 0)
+    notification.AnchorPoint = Vector2.new(1, 0)
+    notification.ClipsDescendants = true
+    
+    local uiCorner = Instance.new("UICorner")
+    uiCorner.CornerRadius = UDim.new(0, 12)
+    uiCorner.Parent = notification
+    
+    local uiStroke = Instance.new("UIStroke")
+    uiStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+    uiStroke.Color = styles[style].Color
+    uiStroke.LineJoinMode = Enum.LineJoinMode.Round
+    uiStroke.Thickness = 2
+    uiStroke.Parent = notification
+    
+    if style == "Premium" then
+        local uiGradient = Instance.new("UIGradient")
+        uiGradient.Color = styles[style].Gradient.Color
+        uiGradient.Rotation = styles[style].Gradient.Rotation
+        uiGradient.Parent = uiStroke
+    end
+    
+    local glow = Instance.new("ImageLabel")
+    glow.Name = "Glow"
+    glow.Parent = notification
+    glow.BackgroundTransparency = 1
+    glow.Size = UDim2.new(1, 20, 1, 20)
+    glow.Position = UDim2.new(0, -10, 0, -10)
+    glow.Image = "rbxassetid://10747385789"
+    glow.ImageColor3 = styles[style].Color
+    glow.ScaleType = Enum.ScaleType.Slice
+    glow.SliceCenter = Rect.new(50, 50, 50, 50)
+    glow.ZIndex = 0
+    glow.ImageTransparency = 0.8
+    
+    local titleFrame = Instance.new("Frame")
+    titleFrame.Name = "TitleFrame"
+    titleFrame.Parent = notification
+    titleFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    titleFrame.Size = UDim2.new(1, 0, 0, 40)
+    
+    local titleCorner = Instance.new("UICorner")
+    titleCorner.CornerRadius = UDim.new(0, 12)
+    titleCorner.Parent = titleFrame
+    
+    local icon = Instance.new("ImageLabel")
+    icon.Name = "Icon"
+    icon.Parent = titleFrame
+    icon.BackgroundTransparency = 1
+    icon.Position = UDim2.new(0, 10, 0.5, -12)
+    icon.Size = UDim2.new(0, 24, 0, 24)
+    icon.Image = styles[style].Icon
+    icon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+    
+    local titleLabel = Instance.new("TextLabel")
+    titleLabel.Name = "Title"
+    titleLabel.Parent = titleFrame
+    titleLabel.BackgroundTransparency = 1
+    titleLabel.Position = UDim2.new(0, 45, 0, 0)
+    titleLabel.Size = UDim2.new(1, -50, 1, 0)
+    titleLabel.Font = Enum.Font.GothamBold
+    titleLabel.Text = title
+    titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    titleLabel.TextSize = 16
+    titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+    
+    local closeButton = Instance.new("ImageButton")
+    closeButton.Name = "CloseButton"
+    closeButton.Parent = titleFrame
+    closeButton.BackgroundTransparency = 1
+    closeButton.Position = UDim2.new(1, -35, 0.5, -10)
+    closeButton.Size = UDim2.new(0, 20, 0, 20)
+    closeButton.Image = "rbxassetid://10747385901"
+    closeButton.ImageColor3 = Color3.fromRGB(180, 180, 180)
+    
+    local messageLabel = Instance.new("TextLabel")
+    messageLabel.Name = "Message"
+    messageLabel.Parent = notification
+    messageLabel.BackgroundTransparency = 1
+    messageLabel.Position = UDim2.new(0, 15, 0, 50)
+    messageLabel.Size = UDim2.new(1, -30, 0, 0)
+    messageLabel.Font = Enum.Font.Gotham
+    messageLabel.Text = message
+    messageLabel.TextColor3 = Color3.fromRGB(220, 220, 220)
+    messageLabel.TextSize = 14
+    messageLabel.TextWrapped = true
+    messageLabel.TextXAlignment = Enum.TextXAlignment.Left
+    messageLabel.TextYAlignment = Enum.TextYAlignment.Top
+    
+    local textHeight = math.ceil(messageLabel.TextBounds.Y / 14) * 14 + 10
+    messageLabel.Size = UDim2.new(1, -30, 0, textHeight)
+    
+    local totalHeight = 50 + textHeight + 15
+    notification.Size = UDim2.new(0, 300, 0, totalHeight)
+    
+    notification.Position = UDim2.new(1, 10, 0.7, 0)
+    notification.Size = UDim2.new(0, 300, 0, 0)
+    
+    local tweenIn = TweenService:Create(notification, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+        Size = UDim2.new(0, 300, 0, totalHeight)
+    })
+    
+    tweenIn:Play()
+    
+    local glowTween = TweenService:Create(glow, TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, -1, true), {
+        ImageTransparency = 0.5
+    })
+    glowTween:Play()
+    
+    local function CloseNotification()
+        glowTween:Cancel()
+        
+        local tweenOut = TweenService:Create(notification, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.In), {
+            Position = UDim2.new(1, 350, notification.Position.Y.Scale, notification.Position.Y.Offset),
+            BackgroundTransparency = 1
+        })
+        
+        tweenOut:Play()
+        tweenOut.Completed:Connect(function()
+            notification:Destroy()
+        end)
+    end
+    
+    closeButton.MouseButton1Click:Connect(CloseNotification)
+    
+    closeButton.MouseEnter:Connect(function()
+        TweenService:Create(closeButton, TweenInfo.new(0.2), {
+            ImageColor3 = Color3.fromRGB(255, 255, 255),
+            Rotation = 90
+        }):Play()
+    end)
+    
+    closeButton.MouseLeave:Connect(function()
+        TweenService:Create(closeButton, TweenInfo.new(0.2), {
+            ImageColor3 = Color3.fromRGB(180, 180, 180),
+            Rotation = 0
+        }):Play()
+    end)
+    
+    if duration > 0 then
+        task.delay(duration, function()
+            if notification and notification.Parent then
+                CloseNotification()
+            end
+        end)
+    end
+    
+    return {
+        Close = CloseNotification,
+        Frame = notification
+    }
+end
+
+local Notifications = {
+    Success = function(title, message, duration)
+        return CreateNotification(title, message, "Success", duration)
+    end,
+    
+    Error = function(title, message, duration)
+        return CreateNotification(title, message, "Error", duration)
+    end,
+    
+    Warning = function(title, message, duration)
+        return CreateNotification(title, message, "Warning", duration)
+    end,
+    
+    Info = function(title, message, duration)
+        return CreateNotification(title, message, "Info", duration)
+    end,
+    
+    Premium = function(title, message, duration)
+        return CreateNotification(title, message, "Premium", duration)
+    end
+}
+
+return Notifications
