@@ -1,0 +1,10 @@
+local Notifications = loadstring(game:HttpGet('https://raw.githubusercontent.com/DemogorgonItsMe/DemoNotifications/refs/heads/main/source'))()
+Notifications.Success("Successfully!", "Let's go!", 2)
+wait(1)
+Notifications.Error("Error", "Hell no", 2)
+wait(1)
+Notifications.Warning("Warning", "This library is cool", 2)
+wait(1)
+Notifications.Info("Information", "Library by Demogorgon!", 2)
+wait(1)
+Notifications.Premium("Premium", "You have access!", 0) -- if duration = 0, it closes using the button
