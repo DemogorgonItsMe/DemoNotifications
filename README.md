@@ -144,6 +144,7 @@ myNotif:Update({
 - ✅ Custom icons
 - ✅ Progress bars
 - ✅ Custom background
+- ✅ Fully editable
 - ✅ Fully open-source
 
 ## 💎 Credits
