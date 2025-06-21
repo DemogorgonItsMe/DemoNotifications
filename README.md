@@ -150,10 +150,12 @@ myNotif:Update({
 ## 🌟 Update Log
 V1
 - The library has been created
+
 V2
 - Updated design
 - Updated functional
 - Access for full customization
+
 
 ## 💎 Credits
 - Library by Demogorgon (demogorgon0001 on discord)
