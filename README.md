@@ -12,6 +12,44 @@ local NotificationLib = loadstring(game:HttpGet("https://raw.githubusercontent.c
 "info", "success", "error", "warning" (default: "info")
 ```
 
+### 🔨 Full Customization
+```
+-- Settings customization
+NotificationLib:SetSettings({
+        duration = 5,
+        position = "BottomRight",
+        maxNotifications = 5,
+        spacing = 10,
+        fadeTime = 0.3,
+        slideDistance = 20
+})
+-- Theme customization
+NotificationLib:SetTheme({
+        background = "rbxassetid://9924336841",
+        primaryColor = Color3.fromRGB(45, 45, 45),
+        successColor = Color3.fromRGB(50, 180, 100),
+        errorColor = Color3.fromRGB(220, 80, 80),
+        warningColor = Color3.fromRGB(240, 180, 50),
+        textColor = Color3.fromRGB(255, 255, 255),
+        cornerRadius = UDim.new(0, 12),
+        iconSize = UDim2.new(0, 24, 0, 24),
+        font = Enum.Font.GothamSemibold,
+        closeIcon = "rbxassetid://6031094677",
+        mobileScale = 0.8,
+        closeButtonSize = UDim2.new(0, 22, 0, 22),
+        showStroke = true,
+        useBackgroundColor = true,
+        backgroundTransparency = 0.7
+})
+-- Icons customization
+NotificationLib._icons = {
+info = "rbxassetid://9405926389",
+success = "rbxassetid://11157772247",
+error = "rbxassetid://9734956085",
+warning = "rbxassetid://85147473315465"
+}
+```
+
 ### 🔧 Configuration
 ```
 NotificationLib:SetSettings({
@@ -106,3 +144,4 @@ myNotif:Update({
 - ✅ Custom icons
 - ✅ Progress bars
 - ✅ Custom background
+- ✅ Fully open-source
