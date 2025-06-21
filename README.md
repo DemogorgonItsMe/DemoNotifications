@@ -145,3 +145,6 @@ myNotif:Update({
 - ✅ Progress bars
 - ✅ Custom background
 - ✅ Fully open-source
+
+## 💎 Credits
+- Library by Demogorgon (demogorgon0001 on discord)
