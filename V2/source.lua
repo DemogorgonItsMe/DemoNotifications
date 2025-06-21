@@ -11,21 +11,25 @@ local NotificationLibrary = {
         iconSize = UDim2.new(0, 24, 0, 24),
         font = Enum.Font.GothamSemibold,
         closeIcon = "rbxassetid://6031094677",
-        mobileScale = 0.8
+        mobileScale = 0.8,
+        closeButtonSize = UDim2.new(0, 22, 0, 22),
+        showStroke = true,
+        useBackgroundColor = true,
+        backgroundTransparency = 0.7
     },
     _settings = {
         duration = 5,
-        position = "BottomRight", -- "BottomRight" or "BottomCenter"
+        position = "BottomRight",
         maxNotifications = 5,
         spacing = 10,
         fadeTime = 0.3,
         slideDistance = 20
     },
     _icons = {
-        info = "rbxassetid://6031094667",
-        success = "rbxassetid://6031090982",
-        error = "rbxassetid://6031090906",
-        warning = "rbxassetid://6031068421"
+        info = "rbxassetid://9405926389",
+        success = "rbxassetid://11157772247",
+        error = "rbxassetid://9734956085",
+        warning = "rbxassetid://85147473315465"
     }
 }
 
@@ -53,10 +57,18 @@ function NotificationLibrary:_init()
     end
 end
 
+function NotificationLibrary:_getNotificationSize()
+    if self:_isMobile() then
+        return UDim2.new(0.9, 0, 0, 90 * self._theme.mobileScale)
+    else
+        return UDim2.new(0, 320, 0, 80)
+    end
+end
+
 function NotificationLibrary:_createNotificationFrame()
     local notification = Instance.new("Frame")
     notification.BackgroundColor3 = self._theme.primaryColor
-    notification.BackgroundTransparency = 0.2
+    notification.BackgroundTransparency = self._theme.useBackgroundColor and 0.2 or 1
     notification.Size = self:_getNotificationSize()
     notification.ClipsDescendants = true
     notification.ZIndex = 100
@@ -65,10 +77,12 @@ function NotificationLibrary:_createNotificationFrame()
     uiCorner.CornerRadius = self._theme.cornerRadius
     uiCorner.Parent = notification
     
-    local uiStroke = Instance.new("UIStroke")
-    uiStroke.Color = Color3.fromRGB(100, 100, 100)
-    uiStroke.Thickness = 1
-    uiStroke.Parent = notification
+    if self._theme.showStroke then
+        local uiStroke = Instance.new("UIStroke")
+        uiStroke.Color = Color3.fromRGB(100, 100, 100)
+        uiStroke.Thickness = 1
+        uiStroke.Parent = notification
+    end
     
     local bgImage = Instance.new("ImageLabel")
     bgImage.Name = "Background"
@@ -76,8 +90,13 @@ function NotificationLibrary:_createNotificationFrame()
     bgImage.Size = UDim2.new(1, 0, 1, 0)
     bgImage.BackgroundTransparency = 1
     bgImage.ScaleType = Enum.ScaleType.Crop
-    bgImage.ImageTransparency = 0.8
+    bgImage.ImageTransparency = self._theme.backgroundTransparency
     bgImage.ZIndex = 101
+    
+    local bgCorner = Instance.new("UICorner")
+    bgCorner.CornerRadius = self._theme.cornerRadius
+    bgCorner.Parent = bgImage
+    
     bgImage.Parent = notification
     
     return notification
@@ -138,7 +157,7 @@ function NotificationLibrary:_createContent(parent)
     
     local closeBtn = Instance.new("ImageButton")
     closeBtn.Image = self._theme.closeIcon
-    closeBtn.Size = UDim2.new(0, 16, 0, 16)
+    closeBtn.Size = self._theme.closeButtonSize
     closeBtn.Position = UDim2.new(1, -25, 0, 10)
     closeBtn.BackgroundTransparency = 1
     closeBtn.ZIndex = 105
@@ -166,13 +185,7 @@ function NotificationLibrary:_createContent(parent)
         progressBar = progressBar
     }
 end
-function NotificationLibrary:_getNotificationSize()
-    if self:_isMobile() then
-        return UDim2.new(0.9, 0, 0, 90 * self._theme.mobileScale)
-    else
-        return UDim2.new(0, 320, 0, 80)
-    end
-end
+
 function NotificationLibrary:_calculatePosition(index)
     local isMobile = self:_isMobile()
     local position = self._settings.position
@@ -201,7 +214,7 @@ function NotificationLibrary:_animateIn(notification)
         TweenInfo.new(self._settings.fadeTime, Enum.EasingStyle.Quint),
         {
             Position = startPos,
-            BackgroundTransparency = 0.2
+            BackgroundTransparency = self._theme.useBackgroundColor and 0.2 or 1
         }
     )
     
@@ -209,7 +222,7 @@ function NotificationLibrary:_animateIn(notification)
         notification.frame.Background,
         TweenInfo.new(self._settings.fadeTime, Enum.EasingStyle.Quint),
         {
-            ImageTransparency = 0.8
+            ImageTransparency = self._theme.backgroundTransparency
         }
     )
     
@@ -289,7 +302,6 @@ function NotificationLibrary:Notify(options)
     end
     
     self:_animateIn(notification)
-    
     table.insert(self._notifications, notification)
     
     notification.closeBtn.MouseButton1Click:Connect(function()
@@ -380,6 +392,18 @@ function NotificationLibrary:SetSettings(settings)
             self._settings[key] = value
         end
     end
+end
+
+function NotificationLibrary:SetBackgroundVisibility(visible)
+    self._theme.useBackgroundColor = visible
+end
+
+function NotificationLibrary:SetStrokeVisibility(visible)
+    self._theme.showStroke = visible
+end
+
+function NotificationLibrary:SetBackgroundTransparency(transparency)
+    self._theme.backgroundTransparency = transparency
 end
 
 NotificationLibrary:_init()
