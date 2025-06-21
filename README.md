@@ -148,10 +148,10 @@ myNotif:Update({
 - ✅ Fully open-source
 
 ## 🌟 Update Log
-#V1
+# V1
 - The library has been created
 
-#V2
+# V2
 - Updated design
 - Updated functional
 - Access for full customization
