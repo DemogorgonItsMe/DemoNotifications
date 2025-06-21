@@ -15,7 +15,10 @@ local NotificationLibrary = {
         closeButtonSize = UDim2.new(0, 22, 0, 22),
         showStroke = true,
         useBackgroundColor = true,
-        backgroundTransparency = 0.7
+        backgroundTransparency = 0.7,
+        progressBarColor = Color3.fromRGB(255, 255, 255),
+        progressBarTransparency = 0.3,
+        progressBarHeight = 3
     },
     _settings = {
         duration = 5,
@@ -163,18 +166,27 @@ function NotificationLibrary:_createContent(parent)
     closeBtn.ZIndex = 105
     closeBtn.Parent = content
     
-    local progressBar = Instance.new("Frame")
-    progressBar.Size = UDim2.new(1, 0, 0, 3)
-    progressBar.Position = UDim2.new(0, 0, 1, -3)
-    progressBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-    progressBar.BackgroundTransparency = 0.7
-    progressBar.BorderSizePixel = 0
-    progressBar.ZIndex = 104
-    progressBar.Parent = parent
+    local progressBarContainer = Instance.new("Frame")
+    progressBarContainer.Name = "ProgressBarContainer"
+    progressBarContainer.Size = UDim2.new(1, 0, 0, self._theme.progressBarHeight)
+    progressBarContainer.Position = UDim2.new(0, 0, 1, -self._theme.progressBarHeight)
+    progressBarContainer.BackgroundTransparency = 1
+    progressBarContainer.ClipsDescendants = true
+    progressBarContainer.ZIndex = 104
+    progressBarContainer.Parent = parent
     
-    local uiCornerProgress = Instance.new("UICorner")
-    uiCornerProgress.CornerRadius = UDim.new(0, 2)
-    uiCornerProgress.Parent = progressBar
+    local containerCorner = Instance.new("UICorner")
+    containerCorner.CornerRadius = self._theme.cornerRadius
+    containerCorner.Parent = progressBarContainer
+    
+    local progressBar = Instance.new("Frame")
+    progressBar.Name = "ProgressBar"
+    progressBar.Size = UDim2.new(1, 0, 1, 0)
+    progressBar.BackgroundColor3 = self._theme.progressBarColor
+    progressBar.BackgroundTransparency = self._theme.progressBarTransparency
+    progressBar.BorderSizePixel = 0
+    progressBar.ZIndex = 105
+    progressBar.Parent = progressBarContainer
     
     return {
         frame = parent,
@@ -182,7 +194,8 @@ function NotificationLibrary:_createContent(parent)
         title = title,
         message = message,
         closeBtn = closeBtn,
-        progressBar = progressBar
+        progressBar = progressBar,
+        progressBarContainer = progressBarContainer
     }
 end
 
@@ -203,6 +216,7 @@ function NotificationLibrary:_calculatePosition(index)
     end
 end
 
+-- Анимация появления
 function NotificationLibrary:_animateIn(notification)
     local startPos = notification.frame.Position
     notification.frame.Position = startPos + UDim2.new(0, 0, 0, self._settings.slideDistance)
@@ -295,10 +309,13 @@ function NotificationLibrary:Notify(options)
     
     if notificationType == "success" then
         frame.BackgroundColor3 = self._theme.successColor
+        notification.progressBar.BackgroundColor3 = self._theme.successColor
     elseif notificationType == "error" then
         frame.BackgroundColor3 = self._theme.errorColor
+        notification.progressBar.BackgroundColor3 = self._theme.errorColor
     elseif notificationType == "warning" then
         frame.BackgroundColor3 = self._theme.warningColor
+        notification.progressBar.BackgroundColor3 = self._theme.warningColor
     end
     
     self:_animateIn(notification)
@@ -321,11 +338,11 @@ function NotificationLibrary:Notify(options)
         local progressTween = game:GetService("TweenService"):Create(
             notification.progressBar,
             TweenInfo.new(duration, Enum.EasingStyle.Linear),
-            {Size = UDim2.new(0, 0, 0, 3)}
+            {Size = UDim2.new(0, 0, 1, 0)}
         )
         progressTween:Play()
     else
-        notification.progressBar.Visible = false
+        notification.progressBarContainer.Visible = false
     end
     
     if duration > 0 then
@@ -368,10 +385,19 @@ function NotificationLibrary:Notify(options)
                 if newOptions.Type then
                     notification.icon.Image = self._icons[newOptions.Type:lower()] or self._icons.info
                     local color = self._theme.primaryColor
-                    if newOptions.Type == "success" then color = self._theme.successColor
-                    elseif newOptions.Type == "error" then color = self._theme.errorColor
-                    elseif newOptions.Type == "warning" then color = self._theme.warningColor end
+                    local progressColor = self._theme.progressBarColor
+                    if newOptions.Type == "success" then 
+                        color = self._theme.successColor
+                        progressColor = self._theme.successColor
+                    elseif newOptions.Type == "error" then 
+                        color = self._theme.errorColor
+                        progressColor = self._theme.errorColor
+                    elseif newOptions.Type == "warning" then 
+                        color = self._theme.warningColor
+                        progressColor = self._theme.warningColor
+                    end
                     notification.frame.BackgroundColor3 = color
+                    notification.progressBar.BackgroundColor3 = progressColor
                 end
             end
         end
@@ -406,6 +432,17 @@ function NotificationLibrary:SetBackgroundTransparency(transparency)
     self._theme.backgroundTransparency = transparency
 end
 
+function NotificationLibrary:SetProgressBarColor(color)
+    self._theme.progressBarColor = color
+end
+
+function NotificationLibrary:SetProgressBarTransparency(transparency)
+    self._theme.progressBarTransparency = transparency
+end
+
+function NotificationLibrary:SetProgressBarHeight(height)
+    self._theme.progressBarHeight = height
+end
 NotificationLibrary:_init()
 
 return NotificationLibrary
